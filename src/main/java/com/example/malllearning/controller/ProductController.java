@@ -1,11 +1,13 @@
 package com.example.malllearning.controller;
 
 
+import com.example.malllearning.common.ApiResponse;
+import com.example.malllearning.dto.product.ProductResponse;
 import com.example.malllearning.entity.Product;
 import com.example.malllearning.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,13 +16,22 @@ import java.util.Map;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
 
     // 商品列表
     @GetMapping
-    public List<Product> list(){
-        return productService.getAllProducts();
+    public ApiResponse<List<ProductResponse>> list(){
+        return ApiResponse.success(
+                productService.getAllProducts()
+                        .stream()
+                        .map(ProductResponse::from)
+                        .toList()
+        );
     }
 
     // 商品详情

@@ -1,12 +1,13 @@
 package com.example.malllearning.service;
 
 
+import com.example.malllearning.common.ResultCode;
 import com.example.malllearning.entity.*;
 import com.example.malllearning.enums.OrderStatus;
+import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.*;
 import com.example.malllearning.vo.OrderItemVO;
 import com.example.malllearning.vo.OrderVO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,14 +50,11 @@ public class OrderService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public OrderVO submitOrder(Long userId, Long userCouponId) throws Exception {
+    public OrderVO submitOrder(Long userId, Long userCouponId) {
         Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(userId)
-                .orElseThrow(() -> new Exception("购物车为空"));
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "购物车为空"));
 
-        List<CartItem> cartItems = cartItemRepository.findByCart_Id(cart.getId());
-        if (cartItems.isEmpty()) {
-            throw new Exception("购物车为空");
-        }
+        List<CartItem> cartItems = getCartItems(userId);
 
         // 1) 校验库存 + 计算总价（使用最新商品数据）
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -65,10 +63,10 @@ public class OrderService {
         for (CartItem cartItem : cartItems) {
             Long pid = cartItem.getProduct().getId();
             Product latestProduct = productRepository.findById(pid)
-                    .orElseThrow(() -> new Exception("商品不存在，id=" + pid));
+            .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "商品不存在，id=" + pid));
 
             if (cartItem.getQuantity() > latestProduct.getStock()) {
-                throw new Exception("库存不足：" + latestProduct.getName() + "，库存=" + latestProduct.getStock());
+                throw new BusinessException(ResultCode.BAD_REQUEST, latestProduct.getName() + "，库存=" + latestProduct.getStock());
             }
 
             latestProductMap.put(pid, latestProduct);
@@ -86,7 +84,7 @@ public class OrderService {
             discount = couponService.validateAndCalculateDiscount(userId, userCouponId, totalAmount);
 
             UserCoupon uc = userCouponRepository.findByIdAndUserId(userCouponId, userId)
-                    .orElseThrow(() -> new Exception("用户优惠券不存在"));
+                    .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"用户优惠券不存在"));
             couponId = uc.getCoupon().getId();
         }
         discount = discount.setScale(2, RoundingMode.HALF_UP);
@@ -99,10 +97,9 @@ public class OrderService {
 
         // 3) 校验余额
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("用户不存在"));
-
+                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"用户不存在"));
         if (user.getBalance().compareTo(finalAmount) < 0) {
-            throw new Exception("余额不足，当前余额：" + user.getBalance());
+            throw new BusinessException(ResultCode.BAD_REQUEST,"余额不足，当前余额：" + user.getBalance());
         }
 
         // 4) 扣库存
@@ -170,9 +167,9 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderVO getOrderDetail(Long userId, Long orderId) throws Exception {
+    public OrderVO getOrderDetail(Long userId, Long orderId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
-                .orElseThrow(() -> new Exception("订单不存在"));
+                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"用户不存在"));
         return toOrderDetailVO(order);
     }
 
@@ -201,5 +198,14 @@ public class OrderService {
 
         vo.setItems(itemVOList);
         return vo;
+    }
+    private List<CartItem> getCartItems(Long userId) {
+        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(userId)
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "购物车为空"));
+        List<CartItem> cartItems = cartItemRepository.findByCart_Id(cart.getId());
+        if (cartItems.isEmpty()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "购物车为空");
+        }
+        return cartItems;
     }
 }

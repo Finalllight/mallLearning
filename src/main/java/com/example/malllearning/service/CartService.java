@@ -1,8 +1,10 @@
 package com.example.malllearning.service;
 
+import com.example.malllearning.common.ResultCode;
 import com.example.malllearning.entity.Cart;
 import com.example.malllearning.entity.CartItem;
 import com.example.malllearning.entity.Product;
+import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.CartItemRepository;
 import com.example.malllearning.repository.CartRepository;
 import com.example.malllearning.repository.ProductRepository;
@@ -31,33 +33,25 @@ public class CartService {
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
     }
+
     @Transactional
-    public CartVO addItem(Long userId, Long productId, Integer quantity) throws Exception {
+    public CartVO addItem(Long userId, Long productId, Integer quantity)  {
         validateQuantity(quantity);
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new Exception("商品不存在"));
-
+        Product product = getProductOrThrow(productId);
         Cart cart = getOrCreateCart(userId);
 
-        Optional<CartItem> existingItemOpt =
-                cartItemRepository.findByCart_IdAndProduct_Id(cart.getId(), productId);
+        CartItem cartItem = cartItemRepository.findByCart_IdAndProduct_Id(cart.getId(), productId)
+                .orElseGet(() -> {
+                    CartItem item = new CartItem();
+                    item.setCart(cart);
+                    item.setProduct(product);
+                    item.setQuantity(0);
+                    return item;
+                });
 
-        int newQuantity = quantity;
-        CartItem cartItem;
-
-        if (existingItemOpt.isPresent()) {
-            cartItem = existingItemOpt.get();
-            newQuantity = cartItem.getQuantity() + quantity;
-        } else {
-            cartItem = new CartItem();
-            cartItem.setCart(cart);
-            cartItem.setProduct(product);
-        }
-
-        if (newQuantity > product.getStock()) {
-            throw new Exception("库存不足，当前库存：" + product.getStock());
-        }
+        int newQuantity = cartItem.getQuantity() + quantity;
+        validateStock(product, newQuantity);
 
         cartItem.setQuantity(newQuantity);
         cartItemRepository.save(cartItem);
@@ -66,19 +60,14 @@ public class CartService {
     }
 
     @Transactional
-    public CartVO updateItemQuantity(Long userId, Long productId, Integer quantity) throws Exception {
+    public CartVO updateItemQuantity(Long userId, Long productId, Integer quantity) {
         validateQuantity(quantity);
 
-        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(userId)
-                .orElseThrow(() -> new Exception("购物车不存在"));
-
-        CartItem cartItem = cartItemRepository.findByCart_IdAndProduct_Id(cart.getId(), productId)
-                .orElseThrow(() -> new Exception("购物车中没有该商品"));
+        Cart cart = getCartOrThrow(userId);
+        CartItem cartItem = getCartItemOrThrow(cart.getId(), productId);
 
         Product product = cartItem.getProduct();
-        if (quantity > product.getStock()) {
-            throw new Exception("库存不足，当前库存：" + product.getStock());
-        }
+        validateStock(product, quantity);
 
         cartItem.setQuantity(quantity);
         cartItemRepository.save(cartItem);
@@ -86,13 +75,12 @@ public class CartService {
         return buildCartVO(cart);
     }
 
-    @Transactional
-    public CartVO removeItem(Long userId, Long productId) throws Exception {
-        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(userId)
-                .orElseThrow(() -> new Exception("购物车不存在"));
 
-        CartItem cartItem = cartItemRepository.findByCart_IdAndProduct_Id(cart.getId(), productId)
-                .orElseThrow(() -> new Exception("购物车中没有该商品"));
+
+    @Transactional
+    public CartVO removeItem(Long userId, Long productId) {
+        Cart cart = getCartOrThrow(userId);
+        CartItem cartItem = getCartItemOrThrow(cart.getId(), productId);
 
         cartItemRepository.delete(cartItem);
 
@@ -101,11 +89,24 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public CartVO getCart(Long userId) {
-        Optional<Cart> cartOpt = cartRepository.findFirstByUserIdOrderByIdAsc(userId);
-        if (cartOpt.isEmpty()) {
-            return emptyCartVO();
-        }
-        return buildCartVO(cartOpt.get());
+        return cartRepository.findFirstByUserIdOrderByIdAsc(userId)
+                .map(this::buildCartVO)
+                .orElseGet(this::emptyCartVO);
+    }
+
+    private Product getProductOrThrow(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "商品不存在"));
+    }
+
+    private Cart getCartOrThrow(Long userId) {
+        return cartRepository.findFirstByUserIdOrderByIdAsc(userId)
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "购物车不存在"));
+    }
+
+    private CartItem getCartItemOrThrow(Long cartId, Long productId) {
+        return cartItemRepository.findByCart_IdAndProduct_Id(cartId, productId)
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "购物车中没有该商品"));
     }
 
     private Cart getOrCreateCart(Long userId) {
@@ -117,9 +118,16 @@ public class CartService {
                 });
     }
 
-    private void validateQuantity(Integer quantity) throws Exception {
+    private void validateQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) {
-            throw new Exception("商品数量必须大于0");
+            throw new BusinessException(ResultCode.BAD_REQUEST, "商品数量必须大于0");
+        }
+    }
+
+    private void validateStock(Product product, Integer quantity) {
+        if (quantity > product.getStock()) {
+            throw new BusinessException(ResultCode.BIZ_ERROR,
+                    "库存不足，当前库存：" + product.getStock());
         }
     }
 

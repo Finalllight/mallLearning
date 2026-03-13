@@ -8,11 +8,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.stream.Collectors;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ApiResponse<Void> handleBusiness(BusinessException e) {
+
         return ApiResponse.fail(e.getCode(), e.getMessage());
     }
 
@@ -48,4 +51,7 @@ public class GlobalExceptionHandler {
         // 开发阶段返回 e.getMessage() 方便调试；生产建议改成固定提示
         return ApiResponse.fail(ResultCode.BIZ_ERROR, e.getMessage());
     }
+
+
+
 }

@@ -1,12 +1,15 @@
 package com.example.malllearning.controller;
 
+import com.example.malllearning.common.ApiResponse;
 import com.example.malllearning.service.CouponService;
+import com.example.malllearning.vo.CouponVO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,41 +21,29 @@ public class CouponController {
     public CouponController(CouponService couponService) {
         this.couponService = couponService;
     }
+
     @GetMapping
-    public Map<String, Object> listAll() {
-        return success(couponService.listAllCoupons());
+    public ApiResponse<List<CouponVO>> listAll() {
+        List<CouponVO> coupons = couponService.listAllCoupons();
+        return ApiResponse.success(coupons);
     }
 
-    @PostMapping("/{couponId}/claim")
-    public Map<String, Object> claim(@PathVariable Long couponId, HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return error("请先登录");
-
-        try {
-            couponService.claimCoupon(userId, couponId);
-            return success("领取成功");
-        } catch (Exception e) {
-            return error(e.getMessage());
-        }
-    }
 
     @GetMapping("/my")
-    public Map<String, Object> myCoupons(HttpSession session) {
+    public ApiResponse<List<CouponVO>> myCoupons(HttpSession session) {
         Long userId = getLoginUserId(session);
-        if (userId == null) return error("请先登录");
-
-        return success(couponService.listMyCoupons(userId));
+        if (userId == null) return ApiResponse.fail(401,"请先登录");
+        return ApiResponse.success(couponService.listMyCoupons(userId));
     }
 
     @GetMapping("/my/usable")
-    public Map<String, Object> myUsableCoupons(@RequestParam BigDecimal orderAmount, HttpSession session) {
+    public ApiResponse<List<CouponVO>> myUsableCoupons(@RequestParam BigDecimal orderAmount, HttpSession session) {
         Long userId = getLoginUserId(session);
-        if (userId == null) return error("请先登录");
-
+        if (userId == null) return ApiResponse.fail(401,"请先登录");
         try {
-            return success(couponService.listMyUsableCoupons(userId, orderAmount));
+            return ApiResponse.success(couponService.listMyUsableCoupons(userId, orderAmount));
         } catch (Exception e) {
-            return error(e.getMessage());
+            return ApiResponse.fail(401,e.getMessage());
         }
     }
 
@@ -63,17 +54,4 @@ public class CouponController {
         return null;
     }
 
-    private Map<String, Object> success(Object data) {
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("status", "success");
-        resp.put("data", data);
-        return resp;
-    }
-
-    private Map<String, Object> error(String message) {
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("status", "error");
-        resp.put("message", message);
-        return resp;
-    }
 }

@@ -1,12 +1,16 @@
 package com.example.malllearning.controller;
 
+import com.example.malllearning.common.ApiResponse;
 import com.example.malllearning.dto.order.SubmitOrderRequest;
+import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.service.OrderService;
+import com.example.malllearning.vo.OrderVO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,38 +24,25 @@ public class OrderController {
     }
 
     @PostMapping("/submit")
-    public Map<String, Object> submit(@RequestBody(required = false) SubmitOrderRequest request,
-                                      HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return error("请先登录");
-
+    public ApiResponse<OrderVO> submit(@RequestBody(required = false) SubmitOrderRequest request,
+                                       HttpSession session) {
+        Long userId = requireLogin(session);
         Long userCouponId = request == null ? null : request.getUserCouponId();
-
-        try {
-            return success(orderService.submitOrder(userId, userCouponId));
-        } catch (Exception e) {
-            return error(e.getMessage());
-        }
+        return ApiResponse.success(orderService.submitOrder(userId, userCouponId));
     }
 
     @GetMapping
-    public Map<String, Object> list(HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return error("请先登录");
-
-        return success(orderService.listOrders(userId));
+    public ApiResponse<List<OrderVO>> listOrders(HttpSession session) {
+        Long userId = requireLogin(session);
+        return ApiResponse.success(orderService.listOrders(userId));
     }
 
     @GetMapping("/{orderId}")
-    public Map<String, Object> detail(@PathVariable Long orderId, HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return error("请先登录");
+    public ApiResponse<OrderVO>detail(@PathVariable Long orderId, HttpSession session) {
 
-        try {
-            return success(orderService.getOrderDetail(userId, orderId));
-        } catch (Exception e) {
-            return error(e.getMessage());
-        }
+        Long userId = requireLogin(session);
+        return ApiResponse.success(orderService.getOrderDetail(userId, orderId));
+
     }
 
     private Long getLoginUserId(HttpSession session) {
@@ -61,17 +52,11 @@ public class OrderController {
         return null;
     }
 
-    private Map<String, Object> success(Object data) {
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("status", "success");
-        resp.put("data", data);
-        return resp;
-    }
-
-    private Map<String, Object> error(String message) {
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("status", "error");
-        resp.put("message", message);
-        return resp;
+    private Long requireLogin(HttpSession session) {
+        Long userId = getLoginUserId(session);
+        if (userId == null) {
+            throw new BusinessException(401, "请先登录");
+        }
+        return userId;
     }
 }

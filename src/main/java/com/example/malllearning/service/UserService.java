@@ -1,6 +1,7 @@
 package com.example.malllearning.service;
 
 import com.example.malllearning.entity.User;
+import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +16,9 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User register(String username, String password, String email) throws Exception {
+    public User register(String username, String password, String email)  {
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new Exception("用户名已存在");
+            throw new BusinessException(400, "用户名已存在");
         }
         User user = new User();
         user.setUsername(username);

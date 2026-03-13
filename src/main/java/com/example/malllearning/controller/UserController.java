@@ -1,14 +1,21 @@
 package com.example.malllearning.controller;
 
+import com.example.malllearning.common.ApiResponse;
+import com.example.malllearning.dto.user.BalanceResponse;
+import com.example.malllearning.dto.user.LoginRequest;
+import com.example.malllearning.dto.user.LoginResponse;
+import com.example.malllearning.dto.user.RegisterRequest;
 import com.example.malllearning.entity.User;
 import com.example.malllearning.service.UserService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,41 +28,32 @@ public class UserController {
     }
     // 用户注册
     @PostMapping("/register")
-    public Map<String,Object> register(@RequestParam String username,
-                                       @RequestParam String password,
-                                       @RequestParam(required = false) String email){
-        Map<String,Object> response = new HashMap<>();
-        try{
-            User user = userService.register(username,password,email);
-            response.put("status","success");
-            response.put("userId",user.getId());
-        }catch(Exception e){
-            response.put("status","error");
-            response.put("message","注册失败，请稍后重试");
-        }
-        return response;
+    public ApiResponse<Long> register(@Valid @RequestBody RegisterRequest request){
+        User user = userService.register(
+                request.getUsername(),
+                request.getPassword(),
+                request.getEmail()
+        );
+        return ApiResponse.success(user.getId());
     }
 
     // 用户登录
     @PostMapping("/login")
-    public Map<String,Object> login(@RequestParam String username,
-                                    @RequestParam String password,
-                                    HttpSession session){
-        Map<String,Object> response = new HashMap<>();
-        userService.login(username,password).ifPresentOrElse(
-                user -> {
-                    // 将用户ID存入 Session
-                    session.setAttribute("userId",user.getId());
-                    response.put("status","success");
-                    response.put("userId",user.getId());
-                },
-                () -> {
-                    response.put("status","error");
-                    response.put("message","用户名或密码错误");
-                }
-        );
-        return response;
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                            HttpSession session){
+        Optional<User> userOptional = userService.login(request.getUsername(), request.getPassword());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            session.setAttribute("userId", user.getId());
+            LoginResponse response = new LoginResponse();
+            response.setUserId(user.getId());
+            return ApiResponse.success(response);
+        } else {
+            return ApiResponse.fail(400, "用户名或密码错误");
+        }
     }
+
 
     // 用户退出
     @PostMapping("/logout")
@@ -68,23 +66,17 @@ public class UserController {
 
     // 查看余额
     @GetMapping("/balance")
-    public Map<String,Object> balance(HttpSession session){
-        Map<String,Object> response = new HashMap<>();
+    public ApiResponse<BalanceResponse> balance(HttpSession session){
         Long userId = (Long) session.getAttribute("userId");
         if(userId == null){
-            response.put("status","error");
-            response.put("message","请先登录");
-            return response;
+            return ApiResponse.fail(401, "用户未登录");
         }
         try{
             BigDecimal balance = userService.getBalance(userId);
-            response.put("status","success");
-            response.put("balance",balance);
+            return ApiResponse.success(new BalanceResponse(balance));
         }catch(Exception e){
-            response.put("status","error");
-            response.put("message",e.getMessage());
+            return ApiResponse.fail(500,e.getMessage() );
         }
-        return response;
     }
 }
 

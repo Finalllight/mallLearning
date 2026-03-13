@@ -5,4 +5,5 @@ public interface ResultCode {
     int BAD_REQUEST = 400;
     int UNAUTHORIZED = 401;
     int BIZ_ERROR = 1000;
+    Integer NOT_FOUND = 404;
 }

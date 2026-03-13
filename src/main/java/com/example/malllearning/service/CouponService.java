@@ -1,10 +1,12 @@
 package com.example.malllearning.service;
 
 
+import com.example.malllearning.common.ResultCode;
 import com.example.malllearning.entity.Coupon;
 import com.example.malllearning.entity.UserCoupon;
 import com.example.malllearning.enums.CouponType;
 import com.example.malllearning.enums.UserCouponStatus;
+import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.CouponRepository;
 import com.example.malllearning.repository.UserCouponRepository;
 import com.example.malllearning.vo.CouponVO;
@@ -48,12 +50,12 @@ public class CouponService {
     }
 
     @Transactional
-    public void claimCoupon(Long userId, Long couponId) throws Exception {
+    public void claimCoupon(Long userId, Long couponId) {
         Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new Exception("优惠券不存在"));
+                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"优惠券不存在"));
 
         if (coupon.getQuantity() == null || coupon.getQuantity() <= 0) {
-            throw new Exception("优惠券已领完");
+            throw new BusinessException(ResultCode.BAD_REQUEST,"优惠券已领完");
         }
 
         coupon.setQuantity(coupon.getQuantity() - 1);
@@ -87,9 +89,9 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
-    public List<CouponVO> listMyUsableCoupons(Long userId, BigDecimal orderAmount) throws Exception {
+    public List<CouponVO> listMyUsableCoupons(Long userId, BigDecimal orderAmount)  {
         if (orderAmount == null || orderAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new Exception("订单金额必须大于0");
+            throw new BusinessException(ResultCode.BAD_REQUEST,"订单金额必须大于0");
         }
 
         List<UserCoupon> list = userCouponRepository
@@ -120,29 +122,29 @@ public class CouponService {
 
     // 给订单模块调用：校验并计算优惠金额
     @Transactional(readOnly = true)
-    public BigDecimal validateAndCalculateDiscount(Long userId, Long userCouponId, BigDecimal orderAmount) throws Exception {
+    public BigDecimal validateAndCalculateDiscount(Long userId, Long userCouponId, BigDecimal orderAmount)  {
         UserCoupon uc = userCouponRepository.findByIdAndUserId(userCouponId, userId)
-                .orElseThrow(() -> new Exception("用户优惠券不存在"));
+                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"用户优惠券不存在"));
 
         if (uc.getStatus() != UserCouponStatus.UNUSED) {
-            throw new Exception("优惠券不可用");
+            throw new BusinessException(ResultCode.BAD_REQUEST,"优惠券不可用");
         }
 
         BigDecimal discount = calculateDiscount(uc.getCoupon(), orderAmount);
         if (discount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new Exception("不满足优惠券使用条件");
+            throw new BusinessException(ResultCode.BAD_REQUEST,"不满足优惠券使用条件");
         }
         return discount;
     }
 
     // 给订单模块调用：下单成功后标记已使用
     @Transactional
-    public void markCouponUsed(Long userId, Long userCouponId) throws Exception {
+    public void markCouponUsed(Long userId, Long userCouponId)  {
         UserCoupon uc = userCouponRepository.findByIdAndUserId(userCouponId, userId)
-                .orElseThrow(() -> new Exception("用户优惠券不存在"));
+                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"用户优惠券不存在"));
 
         if (uc.getStatus() != UserCouponStatus.UNUSED) {
-            throw new Exception("优惠券状态异常");
+            throw new BusinessException(ResultCode.BAD_REQUEST,"优惠券状态异常");
         }
 
         uc.setStatus(UserCouponStatus.USED);

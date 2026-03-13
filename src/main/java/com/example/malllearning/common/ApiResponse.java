@@ -1,6 +1,8 @@
 package com.example.malllearning.common;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     private Integer code;
     private String message;
@@ -16,6 +18,10 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(ResultCode.SUCCESS, "success", data);
+    }
+
+    public static ApiResponse<Void> success() {
+        return new ApiResponse<>(0, "success", null);
     }
 
     public static <T> ApiResponse<T> fail(Integer code, String message) {
