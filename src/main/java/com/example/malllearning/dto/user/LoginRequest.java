@@ -14,5 +14,4 @@ public class LoginRequest {
     @Size(min = 6, message = "密码至少6位")
     private String password;
 
-
 }

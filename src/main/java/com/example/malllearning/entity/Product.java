@@ -30,6 +30,11 @@ public class Product {
 
     public Product() {}
 
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     // getter setter
 
     public Long getId() {

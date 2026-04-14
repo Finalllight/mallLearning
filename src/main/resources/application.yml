@@ -9,8 +9,21 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none       # ????/??????????????????? none?
+      ddl-auto: none
     show-sql: true           # ????? SQL ??
     properties:
       hibernate:
         format_sql: true      # ??? SQL ??
+# application.yml
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn   # 中文界面

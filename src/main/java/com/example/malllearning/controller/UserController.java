@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -57,11 +58,9 @@ public class UserController {
 
     // 用户退出
     @PostMapping("/logout")
-    public Map<String,Object> logout(HttpSession session){
+    public ApiResponse<Void> logout(HttpSession session) {
         session.invalidate();
-        Map<String,Object> response = new HashMap<>();
-        response.put("status","success");
-        return response;
+        return ApiResponse.success();
     }
 
     // 查看余额
