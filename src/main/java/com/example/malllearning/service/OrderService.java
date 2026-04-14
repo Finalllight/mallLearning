@@ -169,7 +169,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderVO getOrderDetail(Long userId, Long orderId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
-                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"用户不存在"));
+                .orElseThrow(() -> new BusinessException(ResultCode.BAD_REQUEST,"订单不存在"));
         return toOrderDetailVO(order);
     }
 

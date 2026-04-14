@@ -93,3 +93,9 @@ CREATE TABLE order_item (
                             FOREIGN KEY (order_id) REFERENCES `order`(id),
                             FOREIGN KEY (product_id) REFERENCES product(id)
 );
+-- 给 user 表添加 role 字段
+ALTER TABLE `user` ADD COLUMN `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '角色：USER-普通用户，ADMIN-管理员';
+
+-- 插入一个管理员账号（密码后续需要改成加密的）
+INSERT INTO `user` (username, password, email, balance, role)
+VALUES ('admin', '123456', 'admin@example.com', 0.00, 'ADMIN');

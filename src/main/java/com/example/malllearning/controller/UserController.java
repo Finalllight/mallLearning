@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "用户管理", description = "用户注册、登录、退出、余额查询等接口")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -37,6 +36,7 @@ public class UserController {
         return ApiResponse.success(user.getId());
     }
 
+    // UserController.login() 方法修改
     @Operation(summary = "用户登录", description = "通过用户名和密码登录，成功后在 Session 中保存用户信息")
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(
@@ -45,8 +45,10 @@ public class UserController {
         return userService.login(request)
                 .map(user -> {
                     session.setAttribute("userId", user.getId());
+                    session.setAttribute("userRole", user.getRole().name()); // ✅ 存储角色
                     LoginResponse response = new LoginResponse();
                     response.setUserId(user.getId());
+                    response.setRole(user.getRole().name()); // ✅ 返回角色
                     return ApiResponse.success(response);
                 })
                 .orElse(ApiResponse.fail(400, "用户名或密码错误"));

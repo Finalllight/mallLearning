@@ -10,14 +10,13 @@ import com.example.malllearning.repository.CartRepository;
 import com.example.malllearning.repository.ProductRepository;
 import com.example.malllearning.vo.CartItemVO;
 import com.example.malllearning.vo.CartVO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
 public class CartService {

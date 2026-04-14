@@ -1,5 +1,6 @@
 package com.example.malllearning.entity;
 
+import com.example.malllearning.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -21,6 +22,9 @@ public class User {
 
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserRole role = UserRole.USER;
     @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 

@@ -33,6 +33,12 @@ public class LoginInterceptor implements HandlerInterceptor {
 
         Long userId = ((Number) userIdObj).longValue();
         request.setAttribute("loginUserId", userId);
+
+        Object role = request.getSession().getAttribute("userRole");
+        if (role != null) {
+            request.setAttribute("loginUserRole", role.toString());
+        }
+
         return true;
     }
 }
