@@ -1,21 +1,20 @@
 package com.example.malllearning.controller;
 
-
 import com.example.malllearning.common.ApiResponse;
 import com.example.malllearning.dto.product.ProductResponse;
 import com.example.malllearning.entity.Product;
 import com.example.malllearning.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@Tag(name = "商品管理", description = "商品列表、详情、搜索等接口")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
-
 
     private final ProductService productService;
 
@@ -23,9 +22,9 @@ public class ProductController {
         this.productService = productService;
     }
 
-    // 商品列表
+    @Operation(summary = "商品列表", description = "获取所有商品列表")
     @GetMapping
-    public ApiResponse<List<ProductResponse>> list(){
+    public ApiResponse<List<ProductResponse>> list() {
         return ApiResponse.success(
                 productService.getAllProducts()
                         .stream()
@@ -34,25 +33,25 @@ public class ProductController {
         );
     }
 
-    // 商品详情
+    @Operation(summary = "商品详情", description = "根据商品ID查询商品详情")
     @GetMapping("/{id}")
-    public Map<String,Object> detail(@PathVariable Long id){
-        Map<String,Object> response = new HashMap<>();
-        try{
-            Product product = productService.getProductById(id);
-            response.put("status","success");
-            response.put("product",product);
-        }catch (Exception e){
-            response.put("status","error");
-            response.put("message",e.getMessage());
-        }
-        return response;
+    public ApiResponse<ProductResponse> detail(
+            @Parameter(description = "商品ID", example = "1", required = true)
+            @PathVariable Long id) {
+        Product product = productService.getProductById(id);
+        return ApiResponse.success(ProductResponse.from(product));
     }
 
-    // 商品搜索
+    @Operation(summary = "商品搜索", description = "根据关键词搜索商品")
     @GetMapping("/search")
-    public List<Product> search(@RequestParam String keyword){
-        return productService.searchProducts(keyword);
+    public ApiResponse<List<ProductResponse>> search(
+            @Parameter(description = "搜索关键词", example = "iPhone", required = true)
+            @RequestParam String keyword) {
+        return ApiResponse.success(
+                productService.searchProducts(keyword)
+                        .stream()
+                        .map(ProductResponse::from)
+                        .toList()
+        );
     }
-
 }

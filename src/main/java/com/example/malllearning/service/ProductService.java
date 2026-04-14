@@ -1,5 +1,7 @@
 package com.example.malllearning.service;
+import com.example.malllearning.common.ResultCode;
 import com.example.malllearning.entity.Product;
+import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,9 +22,9 @@ public class ProductService {
     }
 
     // 获取商品详情
-    public Product getProductById(Long id) throws Exception {
+    public Product getProductById(Long id)  {
         return productRepository.findById(id)
-                .orElseThrow(() -> new Exception("商品不存在"));
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "商品不存在"));
     }
 
     // 搜索商品

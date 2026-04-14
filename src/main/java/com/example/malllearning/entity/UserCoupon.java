@@ -3,9 +3,10 @@ package com.example.malllearning.entity;
 
 import com.example.malllearning.enums.UserCouponStatus;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-
+@Data
 @Entity
 @Table(name = "user_coupon")
 public class UserCoupon {
@@ -43,15 +44,4 @@ public class UserCoupon {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
-    // getter / setter
-    public Long getId() { return id; }
-    public Long getUserId() { return userId; }
-    public Coupon getCoupon() { return coupon; }
-    public UserCouponStatus getStatus() { return status; }
-
-    public void setId(Long id) { this.id = id; }
-    public void setUserId(Long userId) { this.userId = userId; }
-    public void setCoupon(Coupon coupon) { this.coupon = coupon; }
-    public void setStatus(UserCouponStatus status) { this.status = status; }
 }

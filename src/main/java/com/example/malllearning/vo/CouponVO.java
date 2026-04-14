@@ -1,22 +1,41 @@
 package com.example.malllearning.vo;
 
-import com.example.malllearning.dto.coupon.CouponResponse;
-import com.example.malllearning.entity.UserCoupon;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+
+@Schema(description = "优惠券信息")
 @Data
 public class CouponVO {
 
-    private Long userCouponId;     // 用户领券记录ID（我的券场景）
-    private Long couponId;
-    private String name;
-    private String type;
-    private BigDecimal amount;
-    private BigDecimal minOrder;
-    private Integer quantity;      // 平台券列表场景
-    private String status;         // 我的券场景
-    private Boolean canUse;        // 针对某订单金额时是否可用
-    private BigDecimal discount;   // 针对某订单金额可减金额
+    @Schema(description = "用户领券记录ID（我的券场景）", example = "1")
+    private Long userCouponId;
 
+    @Schema(description = "优惠券ID", example = "10")
+    private Long couponId;
+
+    @Schema(description = "优惠券名称", example = "满100减20优惠券")
+    private String name;
+
+    @Schema(description = "优惠券类型（FIXED: 满减券, PERCENTAGE: 折扣券）", example = "FIXED")
+    private String type;
+
+    @Schema(description = "优惠金额 / 折扣比例", example = "20.00")
+    private BigDecimal amount;
+
+    @Schema(description = "最低订单金额（满减门槛）", example = "100.00")
+    private BigDecimal minOrder;
+
+    @Schema(description = "剩余可领数量（平台券列表场景）", example = "50")
+    private Integer quantity;
+
+    @Schema(description = "优惠券使用状态（我的券场景）", example = "UNUSED")
+    private String status;
+
+    @Schema(description = "针对当前订单金额是否可用", example = "true")
+    private Boolean canUse;
+
+    @Schema(description = "针对当前订单金额可减金额", example = "20.00")
+    private BigDecimal discount;
 }

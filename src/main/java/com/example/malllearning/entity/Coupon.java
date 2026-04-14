@@ -2,10 +2,11 @@ package com.example.malllearning.entity;
 
 import com.example.malllearning.enums.CouponType;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+@Data
 @Entity
 @Table(name = "coupon")
 public class Coupon {
@@ -48,20 +49,5 @@ public class Coupon {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // getter / setter
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public CouponType getType() { return type; }
-    public BigDecimal getAmount() { return amount; }
-    public BigDecimal getMinOrder() { return minOrder; }
-    public Integer getQuantity() { return quantity; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    public void setId(Long id) { this.id = id; }
-    public void setName(String name) { this.name = name; }
-    public void setType(CouponType type) { this.type = type; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
-    public void setMinOrder(BigDecimal minOrder) { this.minOrder = minOrder; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
 }

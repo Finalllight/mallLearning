@@ -1,11 +1,19 @@
 package com.example.malllearning.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "统一响应结果")
 public class ApiResponse<T> {
+
+    @Schema(description = "状态码", example = "0")
     private Integer code;
+
+    @Schema(description = "提示信息", example = "success")
     private String message;
+
+    @Schema(description = "响应数据")
     private T data;
 
     public ApiResponse() {}

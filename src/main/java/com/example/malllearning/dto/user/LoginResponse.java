@@ -1,12 +1,15 @@
 package com.example.malllearning.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+@Schema(description = "用户登录响应")
 @Data
 public class LoginResponse {
 
+    @Schema(description = "登录状态", example = "success")
     private String status;
-    private Long userId;
 
-    // constructors, getters and setters
+    @Schema(description = "用户ID", example = "1")
+    private Long userId;
 }

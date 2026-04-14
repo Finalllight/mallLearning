@@ -1,10 +1,11 @@
 package com.example.malllearning.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+@Data
 @Entity
 @Table(name = "order_item")
 public class OrderItem {
@@ -45,17 +46,4 @@ public class OrderItem {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public Long getId() { return id; }
-    public Order getOrder() { return order; }
-    public Product getProduct() { return product; }
-    public Integer getQuantity() { return quantity; }
-    public BigDecimal getPrice() { return price; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-
-    public void setId(Long id) { this.id = id; }
-    public void setOrder(Order order) { this.order = order; }
-    public void setProduct(Product product) { this.product = product; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    public void setPrice(BigDecimal price) { this.price = price; }
 }
