@@ -4,9 +4,12 @@ package com.example.malllearning.entity;
 import com.example.malllearning.enums.UserCouponStatus;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "user_coupon")
 public class UserCoupon {

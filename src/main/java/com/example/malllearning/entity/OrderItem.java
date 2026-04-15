@@ -2,10 +2,12 @@ package com.example.malllearning.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
+import lombok.Getter;
+import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "order_item")
 public class OrderItem {

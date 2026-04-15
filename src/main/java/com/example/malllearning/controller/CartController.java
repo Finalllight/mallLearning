@@ -3,13 +3,12 @@ package com.example.malllearning.controller;
 import com.example.malllearning.common.ApiResponse;
 import com.example.malllearning.dto.cart.AddCartItemRequest;
 import com.example.malllearning.dto.cart.UpdateCartItemRequest;
-import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.service.CartService;
 import com.example.malllearning.vo.CartVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "购物车管理", description = "购物车的增删改查操作")
@@ -27,8 +26,8 @@ public class CartController {
     @PostMapping("/items")
     public ApiResponse<CartVO> addItem(
             @RequestBody AddCartItemRequest request,
-            @Parameter(hidden = true) HttpSession session) {
-        Long userId = getLoginUserId(session);
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
         if (userId == null) return ApiResponse.fail(401, "请先登录");
         CartVO cartVO = cartService.addItem(userId, request.getProductId(), request.getQuantity());
         return ApiResponse.success(cartVO);
@@ -40,8 +39,8 @@ public class CartController {
             @Parameter(description = "商品ID", example = "1", required = true)
             @PathVariable Long productId,
             @RequestBody UpdateCartItemRequest request,
-            @Parameter(hidden = true) HttpSession session) {
-        Long userId = requireLogin(session);
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
         CartVO cartVO = cartService.updateItemQuantity(userId, productId, request.getQuantity());
         return ApiResponse.success(cartVO);
     }
@@ -51,8 +50,8 @@ public class CartController {
     public ApiResponse<CartVO> removeItem(
             @Parameter(description = "商品ID", example = "1", required = true)
             @PathVariable Long productId,
-            @Parameter(hidden = true) HttpSession session) {
-        Long userId = requireLogin(session);
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
         CartVO cartVO = cartService.removeItem(userId, productId);
         return ApiResponse.success(cartVO);
     }
@@ -60,24 +59,14 @@ public class CartController {
     @Operation(summary = "查看购物车", description = "获取当前登录用户的购物车信息，包含商品列表和总金额")
     @GetMapping
     public ApiResponse<CartVO> getCart(
-            @Parameter(hidden = true) HttpSession session) {
-        Long userId = requireLogin(session);
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
         CartVO cartVO = cartService.getCart(userId);
         return ApiResponse.success(cartVO);
     }
 
-    private Long getLoginUserId(HttpSession session) {
-        Object userId = session.getAttribute("userId");
-        if (userId == null) return null;
-        if (userId instanceof Number) return ((Number) userId).longValue();
-        return null;
-    }
 
-    private Long requireLogin(HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) {
-            throw new BusinessException(401, "请先登录");
-        }
-        return userId;
+    private Long getLoginUserId(HttpServletRequest request) {
+        return (Long) request.getAttribute("loginUserId");
     }
 }

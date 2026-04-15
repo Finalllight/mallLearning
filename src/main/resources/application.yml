@@ -25,3 +25,7 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: alpha
   packages-to-scan: com.example.malllearning.controller
+server:
+  servlet:
+    session:
+      timeout: 30m   # Session 30 分钟过期

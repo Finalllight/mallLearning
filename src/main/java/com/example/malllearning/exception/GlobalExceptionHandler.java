@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
     @ExceptionHandler(BusinessException.class)
     public ApiResponse<Void> handleBusiness(BusinessException e) {
 
@@ -48,10 +50,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleException(Exception e) {
-        // 开发阶段返回 e.getMessage() 方便调试；生产建议改成固定提示
-        return ApiResponse.fail(ResultCode.BIZ_ERROR, e.getMessage());
+        log.error("未处理异常: ", e);  // 完整堆栈写入日志
+        return ApiResponse.fail(ResultCode.BIZ_ERROR, "系统繁忙，请稍后重试"); // 用户看到通用提示
     }
-
 
 
 }

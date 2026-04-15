@@ -54,7 +54,10 @@ public class OrderService {
         Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(userId)
                 .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "购物车为空"));
 
-        List<CartItem> cartItems = getCartItems(userId);
+        List<CartItem> cartItems = cartItemRepository.findByCart_Id(cart.getId());
+        if (cartItems.isEmpty()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "购物车为空");
+        }
 
         // 1) 校验库存 + 计算总价（使用最新商品数据）
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -199,13 +202,6 @@ public class OrderService {
         vo.setItems(itemVOList);
         return vo;
     }
-    private List<CartItem> getCartItems(Long userId) {
-        Cart cart = cartRepository.findFirstByUserIdOrderByIdAsc(userId)
-                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "购物车为空"));
-        List<CartItem> cartItems = cartItemRepository.findByCart_Id(cart.getId());
-        if (cartItems.isEmpty()) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "购物车为空");
-        }
-        return cartItems;
-    }
+
+
 }

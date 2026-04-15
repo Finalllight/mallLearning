@@ -1,12 +1,15 @@
 package com.example.malllearning.entity;
-
+import lombok.Setter;
 import com.example.malllearning.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "user")
 public class User {
@@ -28,8 +31,24 @@ public class User {
     @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist()
+    {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+    @PreUpdate
+    public void preUpdate()
+    {
+        updatedAt = LocalDateTime.now();
+    }
 
     // 构造函数
     public User() {}

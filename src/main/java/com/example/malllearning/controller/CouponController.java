@@ -6,7 +6,7 @@ import com.example.malllearning.vo.CouponVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -23,41 +23,43 @@ public class CouponController {
         this.couponService = couponService;
     }
 
-    @Operation(summary = "优惠券列表", description = "查询平台所有可领取的优惠券列表（无需登录）")
+    @Operation(summary = "优惠券列表（公开）")
     @GetMapping
     public ApiResponse<List<CouponVO>> listAll() {
         List<CouponVO> coupons = couponService.listAllCoupons();
         return ApiResponse.success(coupons);
     }
 
-    @Operation(summary = "我的优惠券", description = "查询当前登录用户已领取的所有优惠券")
+    @Operation(summary = "领取优惠券")
+    @PostMapping("/{couponId}/claim")
+    public ApiResponse<Void> claimCoupon(
+            @Parameter(description = "优惠券ID", example = "1", required = true)
+            @PathVariable Long couponId,
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
+        couponService.claimCoupon(userId, couponId);
+        return ApiResponse.success();
+    }
+
+    @Operation(summary = "我的优惠券")
     @GetMapping("/my")
     public ApiResponse<List<CouponVO>> myCoupons(
-            @Parameter(hidden = true) HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ApiResponse.fail(401, "请先登录");
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
         return ApiResponse.success(couponService.listMyCoupons(userId));
     }
 
-    @Operation(summary = "可用优惠券列表", description = "根据订单金额查询当前用户可使用的优惠券，返回每张券的可减金额")
+    @Operation(summary = "可用优惠券列表")
     @GetMapping("/my/usable")
     public ApiResponse<List<CouponVO>> myUsableCoupons(
             @Parameter(description = "订单金额", example = "500.00", required = true)
             @RequestParam BigDecimal orderAmount,
-            @Parameter(hidden = true) HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ApiResponse.fail(401, "请先登录");
-        try {
-            return ApiResponse.success(couponService.listMyUsableCoupons(userId, orderAmount));
-        } catch (Exception e) {
-            return ApiResponse.fail(401, e.getMessage());
-        }
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+        Long userId = getLoginUserId(httpRequest);
+        return ApiResponse.success(couponService.listMyUsableCoupons(userId, orderAmount));
     }
 
-    private Long getLoginUserId(HttpSession session) {
-        Object userId = session.getAttribute("userId");
-        if (userId instanceof Long) return (Long) userId;
-        if (userId instanceof Integer) return ((Integer) userId).longValue();
-        return null;
+    private Long getLoginUserId(HttpServletRequest request) {
+        return (Long) request.getAttribute("loginUserId");
     }
 }

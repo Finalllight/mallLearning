@@ -19,7 +19,9 @@ public class AdminInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         // 1. 先检查是否登录
         Object userIdObj = request.getSession().getAttribute("userId");
         if (!(userIdObj instanceof Number)) {

@@ -21,7 +21,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:5173")
+                .allowedOrigins("http://localhost:5173", "http://localhost:5174")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -30,21 +30,22 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 公共排除路径
+        String[] excludePaths = {
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/swagger-resources/**"
+        };
 
-        // ✅ 普通用户拦截器（不变）
         registry.addInterceptor(loginInterceptor)
-                .addPathPatterns(
-                        "/api/cart/**",
-                        "/api/orders/**",
-                        "/api/users/balance",
-                        "/api/users/logout",
-                        "/api/coupons/my",
-                        "/api/coupons/my/**",
-                        "/api/coupons/*/claim"
-                );
+                .addPathPatterns("/api/cart/**", "/api/orders/**",
+                        "/api/users/balance", "/api/users/logout",
+                        "/api/coupons/my", "/api/coupons/my/**",
+                        "/api/coupons/*/claim")
+                .excludePathPatterns(excludePaths);
 
-        // ✅ 管理员拦截器（新增）
         registry.addInterceptor(adminInterceptor)
-                .addPathPatterns("/api/admin/**");
+                .addPathPatterns("/api/admin/**")
+                .excludePathPatterns(excludePaths);
     }
 }

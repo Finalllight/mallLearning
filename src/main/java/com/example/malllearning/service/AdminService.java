@@ -10,6 +10,7 @@ import com.example.malllearning.entity.User;
 import com.example.malllearning.enums.CouponType;
 import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.CouponRepository;
+import com.example.malllearning.repository.OrderItemRepository;
 import com.example.malllearning.repository.ProductRepository;
 import com.example.malllearning.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -25,13 +26,16 @@ public class AdminService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CouponRepository couponRepository;
+    private final OrderItemRepository orderItemRepository;
 
     public AdminService(ProductRepository productRepository,
                         UserRepository userRepository,
-                        CouponRepository couponRepository) {
+                        CouponRepository couponRepository,
+                        OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.couponRepository = couponRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     // ======================== 商品管理 ========================
@@ -63,6 +67,12 @@ public class AdminService {
         if (!productRepository.existsById(id)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "商品不存在");
         }
+
+        // ✅ 检查是否有订单引用
+        if (orderItemRepository.existsByProduct_Id(id)) {
+            throw new BusinessException(ResultCode.BIZ_ERROR, "该商品已有订单记录，无法删除，建议下架");
+        }
+
         productRepository.deleteById(id);
     }
 
@@ -143,6 +153,11 @@ public class AdminService {
         if (!couponRepository.existsById(id)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "优惠券不存在");
         }
+
+//        if (orderItemRepository.existsByCoupon_Id(id)) {
+//            throw new BusinessException(ResultCode.BIZ_ERROR, "该优惠券已有订单记录，无法删除");
+//        }
+
         couponRepository.deleteById(id);
     }
 

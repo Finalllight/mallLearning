@@ -18,8 +18,9 @@ public class CouponVO {
     @Schema(description = "优惠券名称", example = "满100减20优惠券")
     private String name;
 
-    @Schema(description = "优惠券类型（FIXED: 满减券, PERCENTAGE: 折扣券）", example = "FIXED")
+    @Schema(description = "优惠券类型（FULL_REDUCTION: 满减券, DISCOUNT: 折扣券）", example = "FULL_REDUCTION")
     private String type;
+
 
     @Schema(description = "优惠金额 / 折扣比例", example = "20.00")
     private BigDecimal amount;
