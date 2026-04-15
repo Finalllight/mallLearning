@@ -1,22 +1,28 @@
 package com.example.malllearning.controller;
 
 import com.example.malllearning.common.ApiResponse;
-import com.example.malllearning.dto.user.BalanceResponse;
-import com.example.malllearning.dto.user.LoginRequest;
-import com.example.malllearning.dto.user.LoginResponse;
-import com.example.malllearning.dto.user.RegisterRequest;
+import com.example.malllearning.dto.user.*;
 import com.example.malllearning.entity.User;
+import com.example.malllearning.security.LoginUser;
 import com.example.malllearning.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
 
 @Tag(name = "用户管理", description = "用户注册、登录、退出、余额查询等接口")
 @RestController
@@ -24,12 +30,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserController {
 
     private final UserService userService;
+    private final AuthenticationManager authenticationManager;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService,
+                          AuthenticationManager authenticationManager) {
         this.userService = userService;
+        this.authenticationManager = authenticationManager;
     }
-
-    // ────────────── 公开接口（不经过拦截器）──────────────
 
     @Operation(summary = "用户注册")
     @PostMapping("/register")
@@ -38,47 +45,51 @@ public class UserController {
         return ApiResponse.success(user.getId());
     }
 
-    @Operation(summary = "用户登录", description = "登录成功后在 Session 中保存用户信息")
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
+        try {
+            // 1. 使用 Spring Security 的 AuthenticationManager 进行认证
+            UsernamePasswordAuthenticationToken token =
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(), request.getPassword());
 
-        return userService.login(request)
-                .map(user -> {
-                    HttpSession oldSession = httpRequest.getSession(false);
-                    if (oldSession != null) {
-                        oldSession.invalidate();
-                    }
-                    HttpSession newSession = httpRequest.getSession(true);
+            Authentication authentication = authenticationManager.authenticate(token);
 
-                    newSession.setAttribute("userId", user.getId());
-                    newSession.setAttribute("userRole", user.getRole().name());
+            // 2. 认证成功，将 Authentication 放入 SecurityContext
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
 
-                    LoginResponse response = new LoginResponse();
-                    response.setUserId(user.getId());
-                    response.setRole(user.getRole().name());
-                    return ApiResponse.success(response);
-                })
-                .orElse(ApiResponse.fail(400, "用户名或密码错误"));
+            // 3. 创建新 Session 并绑定 SecurityContext（防止会话固定攻击）
+            HttpSession oldSession = httpRequest.getSession(false);
+            if (oldSession != null) {
+                oldSession.invalidate();
+            }
+            HttpSession newSession = httpRequest.getSession(true);
+            newSession.setAttribute(SPRING_SECURITY_CONTEXT_KEY, context);
+
+            // 4. 构建响应
+            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+            LoginResponse resp = new LoginResponse();
+            resp.setUserId(loginUser.getUserId());
+            resp.setRole(loginUser.getUser().getRole().name());
+            return ApiResponse.success(resp);
+
+        } catch (BadCredentialsException e) {
+            return ApiResponse.fail(400, "用户名或密码错误");
+        }
     }
 
-    // ────────────── 需登录接口（经过拦截器）──────────────
-
-    @Operation(summary = "用户退出")
-    @PostMapping("/logout")
-    public ApiResponse<Void> logout(@Parameter(hidden = true) HttpServletRequest httpRequest) {
-        // 拦截器已验证登录，这里只需要销毁 Session
-        httpRequest.getSession().invalidate();
-        return ApiResponse.success();
-    }
+    // 退出登录已由 SecurityConfig 的 .logout() 处理，Controller 中可以删除
 
     @Operation(summary = "查询余额")
     @GetMapping("/balance")
     public ApiResponse<BalanceResponse> balance(
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = (Long) httpRequest.getAttribute("loginUserId");
-        BigDecimal balance = userService.getBalance(userId);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        BigDecimal balance = userService.getBalance(loginUser.getUserId());
         return ApiResponse.success(new BalanceResponse(balance));
     }
 }

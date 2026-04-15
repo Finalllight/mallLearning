@@ -2,12 +2,13 @@ package com.example.malllearning.controller;
 
 import com.example.malllearning.common.ApiResponse;
 import com.example.malllearning.dto.order.SubmitOrderRequest;
+import com.example.malllearning.security.LoginUser;
 import com.example.malllearning.service.OrderService;
 import com.example.malllearning.vo.OrderVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,8 +28,8 @@ public class OrderController {
     @PostMapping("/submit")
     public ApiResponse<OrderVO> submit(
             @RequestBody(required = false) SubmitOrderRequest request,
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = getLoginUserId(httpRequest);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        Long userId = loginUser.getUserId();
         Long userCouponId = request == null ? null : request.getUserCouponId();
         return ApiResponse.success(orderService.submitOrder(userId, userCouponId));
     }
@@ -36,8 +37,8 @@ public class OrderController {
     @Operation(summary = "订单列表")
     @GetMapping
     public ApiResponse<List<OrderVO>> listOrders(
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = getLoginUserId(httpRequest);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        Long userId = loginUser.getUserId();
         return ApiResponse.success(orderService.listOrders(userId));
     }
 
@@ -46,12 +47,9 @@ public class OrderController {
     public ApiResponse<OrderVO> detail(
             @Parameter(description = "订单ID", example = "1001", required = true)
             @PathVariable Long orderId,
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = getLoginUserId(httpRequest);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        Long userId = loginUser.getUserId();
         return ApiResponse.success(orderService.getOrderDetail(userId, orderId));
     }
 
-    private Long getLoginUserId(HttpServletRequest request) {
-        return (Long) request.getAttribute("loginUserId");
-    }
 }

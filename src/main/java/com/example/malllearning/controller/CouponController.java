@@ -1,12 +1,14 @@
 package com.example.malllearning.controller;
 
 import com.example.malllearning.common.ApiResponse;
+import com.example.malllearning.security.LoginUser;
 import com.example.malllearning.service.CouponService;
 import com.example.malllearning.vo.CouponVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -35,8 +37,8 @@ public class CouponController {
     public ApiResponse<Void> claimCoupon(
             @Parameter(description = "优惠券ID", example = "1", required = true)
             @PathVariable Long couponId,
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = getLoginUserId(httpRequest);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        Long userId = loginUser.getUserId();
         couponService.claimCoupon(userId, couponId);
         return ApiResponse.success();
     }
@@ -44,8 +46,8 @@ public class CouponController {
     @Operation(summary = "我的优惠券")
     @GetMapping("/my")
     public ApiResponse<List<CouponVO>> myCoupons(
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = getLoginUserId(httpRequest);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        Long userId = loginUser.getUserId();
         return ApiResponse.success(couponService.listMyCoupons(userId));
     }
 
@@ -54,12 +56,9 @@ public class CouponController {
     public ApiResponse<List<CouponVO>> myUsableCoupons(
             @Parameter(description = "订单金额", example = "500.00", required = true)
             @RequestParam BigDecimal orderAmount,
-            @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        Long userId = getLoginUserId(httpRequest);
+            @AuthenticationPrincipal LoginUser loginUser) {
+        Long userId = loginUser.getUserId();
         return ApiResponse.success(couponService.listMyUsableCoupons(userId, orderAmount));
     }
 
-    private Long getLoginUserId(HttpServletRequest request) {
-        return (Long) request.getAttribute("loginUserId");
-    }
 }

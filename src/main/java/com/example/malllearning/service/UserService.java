@@ -1,47 +1,50 @@
 package com.example.malllearning.service;
 
 import com.example.malllearning.common.ResultCode;
-import com.example.malllearning.dto.user.LoginRequest;
 import com.example.malllearning.dto.user.RegisterRequest;
 import com.example.malllearning.entity.User;
 import com.example.malllearning.exception.BusinessException;
 import com.example.malllearning.repository.UserRepository;
+import com.example.malllearning.util.Validation;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 @Service
 public class UserService {
-    private UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public User register(RegisterRequest request)  {
+    public User register(RegisterRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new BusinessException(400, "用户名已存在");
+            throw new BusinessException(ResultCode.BAD_REQUEST, "用户名已存在");
         }
+
+        // ✅ 使用你的 Validation 工具类
+        String pwdError = Validation.validatePassword(request.getUsername(), request.getPassword());
+        if (pwdError != null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, pwdError);
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
-        user.setEmail( request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword())); // ✅ BCrypt 哈希
+        user.setEmail(request.getEmail());
         return userRepository.save(user);
     }
 
-    public Optional<User> login(LoginRequest request) {
-        Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
-        if(userOpt.isPresent() && userOpt.get().getPassword().equals(request.getPassword())){
-            return userOpt;
-        }
-        return Optional.empty();
-    }
+    // login() 方法可以删除了 — 认证由 Spring Security 的 AuthenticationManager 处理
 
-    public BigDecimal getBalance(Long userId)  {
+    public BigDecimal getBalance(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND, "用户不存在"));
         return user.getBalance();
     }
 }
-
